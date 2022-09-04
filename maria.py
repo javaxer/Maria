@@ -3,13 +3,13 @@ import re
 import shutil
 import sys
 
-#base_path = "./"
+# base_path = "./"
 base_path = "./name_only_folder"
 base_target_path = "./sorted_folder"
 
 def get_file_list(path=base_path):
     """
-    path경로의 파일 리스트를 반납한다. 별도의
+    path 경로의 파일 리스트를 반납한다.
     :param path:파일 경로
     :return:파일 리스트
     """
@@ -29,7 +29,7 @@ def get_penName(file_name:str):
 def penNameList2PathList(pen_name_list:list):
     """
     작가면 리스트를 경로 패스로 변경
-    :param pen_name_list: 
+    :param pen_name_list: 작가명 목록
     """
     path_list = []
     print(pen_name_list[0:5])
@@ -40,8 +40,7 @@ def penNameList2PathList(pen_name_list:list):
 def mkdir(path):
     """
     path에 새로운 폴더를 생성한다.
-    :param path:
-    :return:
+    :param path: 생성하고자 하는 폴더
     """
     if not os.path.exists(path):
         os.makedirs(path)
@@ -57,9 +56,18 @@ def mv(source,target):
     :param source: 원본 폴더 위치
     :param target: 이동하고자 하는 위치 폴더 경로
     """
-    shutil.move(source,target)
-    print(source, "이동 완료")
-    pass
+    if not os.path.exists(target):
+        print(source, "지정 작가명의 폴더가 존재하지 않습니다")
+        pass
+    elif os.path.exists(target):
+        print(target+"/"+os.path.basename(source))
+        if not os.path.exists(target+"/"+os.path.basename(source)):
+            shutil.move(source,target)
+            print(source, "이동 완료")
+        elif os.path.exists(target+"/"+os.path.basename(source)):
+            print("같은 이름의 파일이 이미 존재합니다.")
+            pass
+
 
 def make_dic(file_list:list,first_one=True):
     """
@@ -121,8 +129,10 @@ if __name__ == "__main__":
 
     #5.작가명 폴더 이동
     for i in list(pen_dict.keys()):
-        #print(pen_dict[i])
-        #mv(pen_dict,base_target_path)
+        source = str(base_path+"/"+i)
+        target =  str(base_target_path+"/["+pen_dict[i]+"]")
+        print(source,"를", target)
+        mv(source,target)
         pass
 
     #6.종료 코드
