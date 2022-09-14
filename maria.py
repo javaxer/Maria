@@ -4,8 +4,8 @@ import shutil
 import sys
 
 # base_path = "./"
-base_path = "./name_only_folder"
-base_target_path = "./sorted_folder"
+base_path = "./name_only_folder"        #테스트용 파일이 저장된 폴더
+base_target_path = "./sorted_folder"    #테스트용 파일이 분류될 폴더
 
 def get_file_list(path=base_path):
     """
@@ -22,8 +22,48 @@ def get_penName(file_name:str):
     :return: 작가명 list 객체
     """
     p = re.compile("\[(.*?)\]")
-    result = p.findall(file_name)
-    #print(type(result), result)
+    result = p.findall(file_name)       #작가명이 될수 있는 후보 리스트(대게는 맨 첫번째가 작가명이다)
+    #result = p.search(file_name)
+    print("result : ", result)
+
+    #작가명 처리에 대한 처리 만약 패턴을 찾아 낼수 없다면 .
+    if len(result) == 0:
+        result = "None"
+        return result
+    else:
+        result = result[0]
+
+    #예외적으로 따로 명칭을 줄 작가명 리스트
+    non_penNameList =  {
+        "Pixiv":"CG",
+        "Artist":"CG",
+        "雑誌":"雑誌",
+        "Collection":"CG",
+        "ゲームCG":"Game_CG",
+        "Korean":"None"
+        }
+
+    npnl_keys = list(non_penNameList.keys())
+    npnl_values = list(non_penNameList.values())
+    # print("npnl_keys:",type(npnl_keys),npnl_keys)
+    # print("npnl_values:",type(npnl_values),npnl_values)
+
+    npldict_lower = {}
+    npnl_size = len(non_penNameList)
+
+    for i in range(npnl_size):
+        npldict_lower[npnl_keys[i].lower()] = npnl_keys[i]
+    print("npldict_lower:", npldict_lower)
+
+    # npnl_keys[0] in penNameList[0]
+    for key in npnl_keys:
+        low_key = key.lower()
+        print("low_key:",low_key)
+        if low_key in result.lower():
+            print(key, "/", result, "/", npldict_lower[key.lower()])
+            result = non_penNameList[npldict_lower[low_key]]
+
+    print("작가명:",result)
     return result
 
 def penNameList2PathList(pen_name_list:list):
@@ -32,7 +72,7 @@ def penNameList2PathList(pen_name_list:list):
     :param pen_name_list: 작가명 목록
     """
     path_list = []
-    print(pen_name_list[0:5])
+    #print(pen_name_list[0:5])
     for i in range(len(pen_name_list)):
         path_list.append(base_target_path+"/["+pen_name_list[i]+"]")
     return path_list
@@ -42,12 +82,13 @@ def mkdir(path):
     path에 새로운 폴더를 생성한다.
     :param path: 생성하고자 하는 폴더
     """
+    if os.path.exists(path):
+        print("폴더가 존재합니다.")
+        pass
+
     if not os.path.exists(path):
         os.makedirs(path)
         print(path, "생성완료")
-        pass
-    if os.path.exists(path):
-        print("폴더가 존재합니다.")
         pass
 
 def mv(source,target):
@@ -81,7 +122,7 @@ def make_dic(file_list:list,first_one=True):
     if first_one == True:
         for i in range(len(file_list)):
             if len(get_penName(file_list[i])) != 0:
-                file_dic[file_list[i]] = get_penName(file_list[i])[0]
+                file_dic[file_list[i]] = get_penName(file_list[i])
             elif len(get_penName(file_list[i])) == 0:
                 file_dic[file_list[i]] = "None"
 
