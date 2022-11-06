@@ -4,8 +4,10 @@ import shutil
 import sys
 
 # base_path = "./"
-base_path = "./name_only_folder"        #테스트용 파일이 저장된 폴더
-base_target_path = "./sorted_folder"    #테스트용 파일이 분류될 폴더
+base_path = "./file"        #테스트용 파일이 저장된 폴더
+base_target_path = "./be_sorted"    #테스트용 파일이 분류될 폴더
+final_target_path = "./pre_sorted"   #테스트용 사전 정리 폴더
+pre_sort_folder_list = []               #미리 정리된 폴더 목록
 
 def get_file_list(path=base_path):
     """
@@ -19,32 +21,34 @@ def get_penName(file_name:str):
     """
     파일명으로 부터 작가명을 추출해 낸다.
     :param file_name: 작가명이 포함된 파일 명
-    :return: 작가명 list 객체
+    :return: 작가명 str 객체
     """
     p = re.compile("\[(.*?)\]")
     result = p.findall(file_name)       #작가명이 될수 있는 후보 리스트(대게는 맨 첫번째가 작가명이다)
     #result = p.search(file_name)
     print("result : ", result)
 
-    #작가명 처리에 대한 처리 만약 패턴을 찾아 낼수 없다면 .
+    #작가명 처리에 대한 처리 만약 패턴을 찾아 낼수 없다면 None을 작가명으로 처리.
     if len(result) == 0:
-        result = "None"
+        result = "[None]"
         return result
     else:
-        result = result[0]
+        result = "["+result[0]+"]"              #그렇지 않을 경우는 가장 첫번째 검색어를 작가명으로 선택
 
     #예외적으로 따로 명칭을 줄 작가명 리스트
     non_penNameList =  {
         "Pixiv":"CG",
         "Artist":"CG",
-        "雑誌":"雑誌",
+        "雑誌":"잡지",
         "Collection":"CG",
         "ゲームCG":"Game_CG",
-        "Korean":"None"
+        "Korean":"None",
+        "Fanbox":"CG",
+        "Twitter":"CG"
         }
 
     npnl_keys = list(non_penNameList.keys())
-    npnl_values = list(non_penNameList.values())
+    # npnl_values = list(non_penNameList.values())
     # print("npnl_keys:",type(npnl_keys),npnl_keys)
     # print("npnl_values:",type(npnl_values),npnl_values)
 
@@ -53,15 +57,21 @@ def get_penName(file_name:str):
 
     for i in range(npnl_size):
         npldict_lower[npnl_keys[i].lower()] = npnl_keys[i]
-    print("npldict_lower:", npldict_lower)
+    # print("npldict_lower:", npldict_lower)
 
     # npnl_keys[0] in penNameList[0]
     for key in npnl_keys:
         low_key = key.lower()
-        print("low_key:",low_key)
+        # print("low_key:",low_key)
         if low_key in result.lower():
-            print(key, "/", result, "/", npldict_lower[key.lower()])
-            result = non_penNameList[npldict_lower[low_key]]
+            # print(key, "/", result, "/", npldict_lower[key.lower()])
+            result = "["+non_penNameList[npldict_lower[low_key]]+"]"
+
+    #선 정리 폴더 목록에 이름이 있을 경우
+    for i in pre_sort_folder_list:
+        if result in i:
+            print("선 정리 폴더 해당")
+            result = i              #선 정리된 폴더 명을 그대로 사용한다.(즉, 대가로를 사용하지 않는다)
 
     print("작가명:",result)
     return result
@@ -72,9 +82,9 @@ def penNameList2PathList(pen_name_list:list):
     :param pen_name_list: 작가명 목록
     """
     path_list = []
-    #print(pen_name_list[0:5])
+    # print(pen_name_list[0:5])      #부분적으로만 출력하기
     for i in range(len(pen_name_list)):
-        path_list.append(base_target_path+"/["+pen_name_list[i]+"]")
+        path_list.append(base_target_path+"/"+pen_name_list[i])
     return path_list
 
 def mkdir(path):
@@ -110,7 +120,7 @@ def mv(source,target):
             pass
 
 
-def make_dic(file_list:list,first_one=True):
+def make_dic(file_list:list):
     """
     파일목록으로 부터 파일명을 키로하는 작가명 사전 생성
     :param file_list: 파일목록 리스트
@@ -119,37 +129,45 @@ def make_dic(file_list:list,first_one=True):
     """
     file_dic = dict()
 
-    if first_one == True:
-        for i in range(len(file_list)):
-            if len(get_penName(file_list[i])) != 0:
-                file_dic[file_list[i]] = get_penName(file_list[i])
-            elif len(get_penName(file_list[i])) == 0:
-                file_dic[file_list[i]] = "None"
-
-    #이하는 False모드에 대한 코드 구현이었으나 어차피 이름 구현시에는 맨 처음에 있는 이름을 사용함이 맞음으로 주석 처리
-    # elif first_one == False:
-    #     for i in range(len(file_list)):
-    #         if len(get_penName(file_list[i])) != 0:
-    #             file_dic[file_list[i]] = get_penName(file_list[i])
-    #         elif len(get_penName(file_list[i])) == 0:
-    #             file_dic[file_list[i]] = "None"
+    for i in range(len(file_list)):
+        if len(get_penName(file_list[i])) != 0:
+            file_dic[file_list[i]] = get_penName(file_list[i])
+        elif len(get_penName(file_list[i])) == 0:
+            file_dic[file_list[i]] = "None"
 
     return file_dic
 
 if __name__ == "__main__":
-    #1.폴더내 파일 목록 읽어 오기
 
-    #print(len(sys.argv))
-    if len(sys.argv) != 1:
+    #1.폴더내 파일 목록 읽어 오기
+    print(len(sys.argv))
+    print(sys.argv)
+    #입력이 하나도 이루어지지 않았을 경우(그냥 종료)
+    if len(sys.argv) <= 2:
+        print("사용법 : python -m maria [정리할 폴더] [이동할 폴더] or python -m maria [정리할 폴더] [이동할 폴더] [PEN NAME을 가져올 폴더]")
+        sys.exit()
+
+    #args 입력이 두개만 이루어졌을 경우, 즉 [정리할 폴더] 와 [이동할 폴더] 만이 입력 되었을 경우
+    elif len(sys.argv) == 3:
         base_path = sys.argv[1]
         base_target_path = sys.argv[2]
-    print(base_path," 에서 ",base_target_path," 로 파일 정리")
-    file_list = get_file_list(base_path)
-    #print(file_list)
+        print(base_path," 에서 ",base_target_path," 로 파일 정리")
+        file_list = get_file_list(base_path)
+
+    #args 입력이 세개가 이루어졌을 경우
+    elif len(sys.argv) == 4:
+        base_path = sys.argv[1]
+        base_target_path = sys.argv[2]
+        final_target_path = sys.argv[3]
+        print(base_path," 에서 ",base_target_path," 로 파일 정리", "penName 목록은 ", final_target_path, "에서 가져 옴")
+        file_list = get_file_list(base_path)
+        pre_sort_folder_list = get_file_list(final_target_path)
+    # print(file_list)
+    # print("사전 정리 폴더: ", pre_sort_folder_list)
 
     #2.파일 목록 내 작가명 추출한 딕셔너리 만들기
     pen_dict = make_dic(file_list)
-    #print(pen_dict)
+    # print(pen_dict)
 
     #3.작가명 리스트 생성
     pen_name_list = list(pen_dict.values())     #사전 객체에서 값(작가명) 생성
@@ -161,18 +179,18 @@ if __name__ == "__main__":
     
     #4.작가명 폴더 생성
     path_list = penNameList2PathList(pen_name_list)
-    print("path_list : ",path_list)
+    # print("path_list : ", path_list)
     for i in path_list:
     #for i in path_list[0:5]:            #테스트 코드로 상위 5개만 생성
         mkdir(i)
-        print(i)
+        print("폴더 생성 : ",i)
         #pass
 
     #5.작가명 폴더 이동
     for i in list(pen_dict.keys()):
         source = str(base_path+"/"+i)
-        target =  str(base_target_path+"/["+pen_dict[i]+"]")
-        print(source,"를", target)
+        target =  str(base_target_path+"/"+pen_dict[i])
+        print(source,"를", target, "으로 이동")
         mv(source,target)
         pass
 
