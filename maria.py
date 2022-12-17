@@ -69,7 +69,7 @@ def get_penName(file_name:str):
 
     #선 정리 폴더 목록에 이름이 있을 경우
     for i in pre_sort_folder_list:
-        if result in i:
+        if result.lower() in i.lower():
             print("선 정리 폴더 해당")
             result = i              #선 정리된 폴더 명을 그대로 사용한다.(즉, 대가로를 사용하지 않는다)
 
@@ -136,6 +136,14 @@ def make_dic(file_list:list):
             file_dic[file_list[i]] = "None"
 
     return file_dic
+
+def lower_name(name:str)->str:
+    """
+    입력되는 이름을 소문자로 변경하는 코드
+    :param name: 입력되는 이름
+    :return: 수문자화 된 이름
+    """
+    return name.lower()
 
 if __name__ == "__main__":
 
